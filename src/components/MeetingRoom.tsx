@@ -19,10 +19,12 @@ import {
 import { Button } from "./ui/button";
 import EndCallButton from "./EndCallButton";
 import CodeEditor from "./CodeEditor";
+import { useParams } from "next/navigation";
 
 
 function MeetingRoom() {
   const router = useRouter();
+  const { id } = useParams();
   const [layout, setLayout] = useState<"grid" | "speaker">("speaker");
   const [showParticipants, setShowParticipants] = useState(false);
   const { useCallCallingState } = useCallStateHooks();
@@ -96,7 +98,7 @@ function MeetingRoom() {
         <ResizableHandle withHandle />
 
         <ResizablePanel defaultSize={65} minSize={25}>
-          <CodeEditor />
+          <CodeEditor interviewId={id as string} />
         </ResizablePanel>
       </ResizablePanelGroup>
     </div>

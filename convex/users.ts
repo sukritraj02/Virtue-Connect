@@ -7,7 +7,6 @@ export const syncUser = mutation({
     email: v.string(),
     clerkId: v.string(),
     image: v.optional(v.string()),
-     
   },
 
   handler: async(ctx, args) => {
@@ -16,14 +15,15 @@ export const syncUser = mutation({
     .filter((q) => q.eq(q.field("clerkId"), args.clerkId))
     .first();
 
-    if(existingUser) return;
-   
+    if(existingUser) {
+      return await ctx.db.patch(existingUser._id, {
+        name: args.name,
+        email: args.email,
+        image: args.image,
+      });
+    }
 
-    return await ctx.db.insert("users", {
-      ...args,
-      role: "candidate"
-    });
-
+    return await ctx.db.insert("users", args);
   },
 });
 
