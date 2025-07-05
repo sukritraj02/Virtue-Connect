@@ -27,7 +27,6 @@ import UserInfo from "@/components/UserInfo";
 import { Calendar } from "@/components/ui/calendar";
 import MeetingCard from "@/components/ui/MeetingCard";
 
-
 function InterviewScheduleUI() {
   const client = useStreamVideoClient();
   const { user } = useUser();
@@ -37,9 +36,6 @@ function InterviewScheduleUI() {
   const interviews = useQuery(api.interviews.getAllInterviews) ?? [];
   const users = useQuery(api.users.getUsers) ?? [];
   const createInterview = useMutation(api.interviews.createInterview);
-
-  const candidates = users?.filter((u) => u.role === "candidate");
-  const interviewers = users?.filter((u) => u.role === "interviewer");
 
   const [formData, setFormData] = useState({
     title: "",
@@ -124,11 +120,11 @@ function InterviewScheduleUI() {
     }));
   };
 
-  const selectedInterviewers = interviewers.filter((i) =>
+  const selectedInterviewers = users.filter((i) =>
     formData.interviewerIds.includes(i.clerkId)
   );
 
-  const availableInterviewers = interviewers.filter(
+  const availableInterviewers = users.filter(
     (i) => !formData.interviewerIds.includes(i.clerkId)
   );
 
@@ -142,7 +138,6 @@ function InterviewScheduleUI() {
         </div>
 
         {/* DIALOG */}
-
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button size="lg">Schedule Interview</Button>
@@ -185,7 +180,7 @@ function InterviewScheduleUI() {
                     <SelectValue placeholder="Select candidate" />
                   </SelectTrigger>
                   <SelectContent>
-                    {candidates.map((candidate) => (
+                    {users.map((candidate) => (
                       <SelectItem key={candidate.clerkId} value={candidate.clerkId}>
                         <UserInfo user={candidate} />
                       </SelectItem>
@@ -201,51 +196,46 @@ function InterviewScheduleUI() {
                   {selectedInterviewers.map((interviewer) => (
                     <div
                       key={interviewer.clerkId}
-                      className="inline-flex items-center gap-2 bg-secondary px-2 py-1 rounded-md text-sm"
+                      className="flex items-center gap-2 bg-secondary px-3 py-1 rounded-full text-sm"
                     >
                       <UserInfo user={interviewer} />
                       {interviewer.clerkId !== user?.id && (
                         <button
                           onClick={() => removeInterviewer(interviewer.clerkId)}
-                          className="hover:text-destructive transition-colors"
+                          className="text-muted-foreground hover:text-foreground"
                         >
-                          <XIcon className="h-4 w-4" />
+                          <XIcon className="h-3 w-3" />
                         </button>
                       )}
                     </div>
                   ))}
                 </div>
-                {availableInterviewers.length > 0 && (
-                  <Select onValueChange={addInterviewer}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Add interviewer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {availableInterviewers.map((interviewer) => (
-                        <SelectItem key={interviewer.clerkId} value={interviewer.clerkId}>
-                          <UserInfo user={interviewer} />
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
+
+                <Select onValueChange={addInterviewer}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Add interviewer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableInterviewers.map((interviewer) => (
+                      <SelectItem key={interviewer.clerkId} value={interviewer.clerkId}>
+                        <UserInfo user={interviewer} />
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* DATE & TIME */}
-              <div className="flex gap-4">
-                {/* CALENDAR */}
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Date</label>
                   <Calendar
                     mode="single"
                     selected={formData.date}
                     onSelect={(date) => date && setFormData({ ...formData, date })}
-                    disabled={(date) => date < new Date()}
                     className="rounded-md border"
                   />
                 </div>
-
-                {/* TIME */}
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Time</label>
@@ -254,12 +244,12 @@ function InterviewScheduleUI() {
                     onValueChange={(time) => setFormData({ ...formData, time })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select time" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {TIME_SLOTS.map((time) => (
-                        <SelectItem key={time} value={time}>
-                          {time}
+                      {TIME_SLOTS.map((slot) => (
+                        <SelectItem key={slot} value={slot}>
+                          {slot}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -267,44 +257,37 @@ function InterviewScheduleUI() {
                 </div>
               </div>
 
-              {/* ACTION BUTTONS */}
-              <div className="flex justify-end gap-3 pt-4">
-                <Button variant="outline" onClick={() => setOpen(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={scheduleMeeting} disabled={isCreating}>
-                  {isCreating ? (
-                    <>
-                      <Loader2Icon className="mr-2 size-4 animate-spin" />
-                      Scheduling...
-                    </>
-                  ) : (
-                    "Schedule Interview"
-                  )}
-                </Button>
-              </div>
+              {/* SUBMIT BUTTON */}
+              <Button
+                onClick={scheduleMeeting}
+                disabled={isCreating}
+                className="w-full"
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                    Scheduling...
+                  </>
+                ) : (
+                  "Schedule Interview"
+                )}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* LOADING STATE & MEETING CARDS */}
-      {!interviews ? (
-        <div className="flex justify-center py-12">
-          <Loader2Icon className="size-8 animate-spin text-muted-foreground" />
+      {/* INTERVIEWS LIST */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold">Scheduled Interviews</h2>
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {interviews.map((interview) => (
+            <MeetingCard key={interview._id} interview={interview} />
+          ))}
         </div>
-      ) : interviews.length > 0 ? (
-        <div className="spacey-4">
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {interviews.map((interview) => (
-              <MeetingCard key={interview._id} interview={interview} />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-12 text-muted-foreground">No interviews scheduled</div>
-      )}
+      </div>
     </div>
   );
 }
+
 export default InterviewScheduleUI;
